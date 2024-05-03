@@ -2,6 +2,10 @@
 const {
   Model
 } = require('sequelize');
+
+const { ServerConfig } = require('../config');
+const bcrypt = require('bcrypt')
+
 module.exports = (sequelize, DataTypes) => {
   class User extends Model {
     /**
@@ -36,5 +40,11 @@ module.exports = (sequelize, DataTypes) => {
       modelName: "User",
     }
   );
+  User.beforeCreate(function encrypt(user){
+    // salt rounds are actually the cost factor. higher the cost factor, the more hashing rounds are done and it also increases the time
+    const encryptedPassword = bcrypt.hashSync(user.password, +ServerConfig.SALT_ROUNDS);
+    user.password = encryptedPassword; 
+
+  });
   return User;
 };
