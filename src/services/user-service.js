@@ -1,7 +1,8 @@
 const { UserRepository } = require("../repository");
 const { StatusCodes } = require("http-status-codes");
 const AppError = require("../utils/errors/app-error");
-const { checkPassword, createToken } = require('../utils/common').Auth;
+const { JsonWebTokenError } = require("jsonwebtoken");
+const { checkPassword, createToken, verifyToken } = require('../utils/common').Auth;
 
 const userRepository = new UserRepository();
 
@@ -60,8 +61,41 @@ async function signIn(data) {
   }
 }
 
+async function isAuthenticated(token){
+    try {
+        if(!token) {
+            throw new AppError(
+              "Missing JWT token",
+              StatusCodes.BAD_REQUEST
+            );
+        }
+        const response = verifyToken(token);
+        // if token is verified, we will get a similar object liek this - { id: "", email: "", iat: "", exp: "" }
+
+        const user = await userRepository.get(response.id);
+        if(!user){
+            throw new AppError(
+              "No user found",
+              StatusCodes.NOT_FOUND
+            );
+        }
+
+        return user.id;
+    } catch (error) {
+        if (error instanceof AppError) throw error;
+        if(error.name == "JsonWebTokenError"){
+            throw new AppError(
+              "Invalid JWT token",
+              StatusCodes.BAD_REQUEST
+            );
+        }
+        console.log(error)
+        throw error;
+    }
+}
 
 module.exports = {
   createUser,
   signIn,
+  isAuthenticated,
 };
