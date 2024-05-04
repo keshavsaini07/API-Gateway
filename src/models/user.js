@@ -40,6 +40,7 @@ module.exports = (sequelize, DataTypes) => {
       modelName: "User",
     }
   );
+  // sequelize hooks: sequelize uses something similar like js objects to implement these models in the backend
   User.beforeCreate(function encrypt(user){
     // salt rounds are actually the cost factor. higher the cost factor, the more hashing rounds are done and it also increases the time
     const encryptedPassword = bcrypt.hashSync(user.password, +ServerConfig.SALT_ROUNDS);

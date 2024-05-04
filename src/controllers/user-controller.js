@@ -20,6 +20,26 @@ async function createUser(req, res) {
   }
 }
 
+/*
+ * POST : /signin
+ * req-body { email: 'abc@xyz.com', password: 1234 }
+ */
+async function signIn(req, res) {
+  try {
+    const user = await UserService.signIn({
+      email: req.body.email,
+      password: req.body.password,
+    });
+    SuccessResponse.data = user;
+    return res.status(StatusCodes.CREATED).json(SuccessResponse);
+  } catch (error) {
+    console.log(error)
+    ErrorResponse.error = error;
+    return res.status(error.statusCode).json(ErrorResponse);
+  }
+}
+
 module.exports = {
   createUser,
+  signIn
 };
