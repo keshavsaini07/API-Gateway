@@ -1,7 +1,7 @@
 const { UserRepository } = require("../repository");
 const { StatusCodes } = require("http-status-codes");
 const AppError = require("../utils/errors/app-error");
-const { JsonWebTokenError } = require("jsonwebtoken");
+const { JsonWebTokenError, TokenExpiredError } = require("jsonwebtoken");
 const { checkPassword, createToken, verifyToken } = require('../utils/common').Auth;
 
 const userRepository = new UserRepository();
@@ -86,6 +86,12 @@ async function isAuthenticated(token){
         if(error.name == "JsonWebTokenError"){
             throw new AppError(
               "Invalid JWT token",
+              StatusCodes.BAD_REQUEST
+            );
+        }
+        if(error.name == "TokenExpiredError"){
+            throw new AppError(
+              "Token expired! Please generate new token",
               StatusCodes.BAD_REQUEST
             );
         }
