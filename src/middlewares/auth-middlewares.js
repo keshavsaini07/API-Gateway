@@ -20,8 +20,8 @@ function validateAuthRequest(req, res, next) {
       StatusCodes.BAD_REQUEST
     );
     return res.status(StatusCodes.BAD_REQUEST).json(ErrorResponse);
-}
-next();
+  }
+  next();
 }
 
 // this is going to be a signifier for all the downstream apis that incoming request is an authenticated request and this is the user who authenticated themselves
@@ -39,7 +39,17 @@ async function checkAuth(req, res, next){
     }
 }
 
+async function checkAdmin(req, res, next){
+  const response = await UserService.isAdmin(req.user);
+  console.log(response)
+  if(!response){ 
+      return res.status(StatusCodes.UNAUTHORIZED).json({msg: "User not authorized for this action"});
+  }
+  next();
+}
+
 module.exports = {
   validateAuthRequest,
-  checkAuth
+  checkAuth,
+  checkAdmin
 };

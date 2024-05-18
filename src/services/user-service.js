@@ -11,6 +11,7 @@ const roleRepository = new RoleRepository();
 async function createUser(data) { 
   try {
     const user = await userRepository.create(data);
+    // directly adding the customer role to the users registering
     const role = await roleRepository.getRoleByName(Enums.USER_ROLES_ENUM.CUSTOMER);
     user.addRole(role);
     return user;
@@ -37,8 +38,8 @@ async function signIn(data) {
   try {
     const user = await userRepository.getUserByEmail(data.email);
     if(!user){
-        throw new AppError(
-          "No user found for the given email",
+      throw new AppError(
+        "No user found for the given email",
           StatusCodes.NOT_FOUND
         );
     }
@@ -46,12 +47,12 @@ async function signIn(data) {
     const passwordMatch = checkPassword(data.password, user.password);
     
     if(!passwordMatch){
-        throw new AppError(
-          "Invalid Password for the given email",
+      throw new AppError(
+        "Invalid Password for the given email",
           StatusCodes.BAD_REQUEST
         );
-    }
-     
+      }
+      
     const jwt = createToken({id: user.id, email: user.email});
     return jwt;
   } catch (error) {
@@ -74,37 +75,86 @@ async function isAuthenticated(token){
         }
         const response = verifyToken(token);
         // if token is verified, we will get a similar object liek this - { id: "", email: "", iat: "", exp: "" }
-
+        
         const user = await userRepository.get(response.id);
         if(!user){
-            throw new AppError(
-              "No user found",
+          throw new AppError(
+            "No user found",
               StatusCodes.NOT_FOUND
             );
         }
-
+        
         return user.id;
-    } catch (error) {
+      } catch (error) {
         if (error instanceof AppError) throw error;
         if(error.name == "JsonWebTokenError"){
             throw new AppError(
               "Invalid JWT token",
               StatusCodes.BAD_REQUEST
             );
-        }
+          }
         if(error.name == "TokenExpiredError"){
-            throw new AppError(
+          throw new AppError(
               "Token expired! Please generate new token",
               StatusCodes.BAD_REQUEST
             );
-        }
+          }
         console.log(error)
         throw error;
     }
 }
 
+async function addRoleToUser(data){
+  try {
+    const user = await userRepository.get(data.id);
+    if (!user) {
+      throw new AppError("No user found for the given id", StatusCodes.NOT_FOUND);
+    }
+    const role = await roleRepository.getRoleByName(data.role);
+    if (!role) {
+      throw new AppError("No role found for the given role", StatusCodes.NOT_FOUND);
+    }
+    user.addRole(role);
+    return user;
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    console.log(error);
+    throw new AppError(
+      "Cannot add role to a user",
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
+  }
+}
+
+async function isAdmin(id){
+  try {
+    const user = await userRepository.get(id);
+    if (!user) {
+      throw new AppError("No user found for the given id", StatusCodes.NOT_FOUND);
+    }
+    const adminRole = await roleRepository.getRoleByName(Enums.USER_ROLES_ENUM.ADMIN);
+    if (!adminRole) {
+      throw new AppError(
+        "No user found for the given role",
+        StatusCodes.NOT_FOUND
+      ); 
+    }
+    return user.hasRole(adminRole);
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    console.log(error);
+    throw new AppError(
+      "Something went wrong",
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
+  }
+}
+
+
 module.exports = {
   createUser,
   signIn,
   isAuthenticated,
+  addRoleToUser,
+  isAdmin
 };
